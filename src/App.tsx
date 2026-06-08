@@ -47,7 +47,7 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen font-sans bg-slate-50 text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen font-sans bg-red-500 text-slate-900 selection:bg-blue-100 selection:text-blue-900">
       <Navbar onNavigate={handleNavigate} />
       
       <main className="pt-16">

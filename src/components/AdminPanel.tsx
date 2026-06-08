@@ -114,8 +114,8 @@ export function AdminPanel() {
     let processed = 0;
     
     selectedFiles.forEach(file => {
-      if (file.size > 2000000) { 
-        addToast(`Image ${file.name} is too large (>2MB).`, 'error');
+      if (file.size > 5000000) { 
+        addToast(`Image ${file.name} is too large (>5MB). Please choose a smaller file.`, 'error');
         processed++;
         if (processed === selectedFiles.length) finish();
         return;
@@ -123,10 +123,48 @@ export function AdminPanel() {
       const reader = new FileReader();
       reader.onloadend = () => {
         if (reader.result) {
-          newImages.push(reader.result as string);
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // Compress to 60% quality jpeg
+            
+            // Check if still too large for Firestore (approx limit of string is < 700kb to be safe)
+            if (dataUrl.length > 700000) {
+                 addToast(`Image ${file.name} could not be compressed enough. Please manually resize it.`, 'error');
+            } else {
+                 newImages.push(dataUrl);
+            }
+            
+            processed++;
+            if (processed === selectedFiles.length) finish();
+          };
+          img.src = reader.result as string;
+        } else {
+          processed++;
+          if (processed === selectedFiles.length) finish();
         }
-        processed++;
-        if (processed === selectedFiles.length) finish();
       };
       reader.readAsDataURL(file);
     });
